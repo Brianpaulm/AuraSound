@@ -5,37 +5,68 @@ on:
     branches:
       - main
 
+  workflow_dispatch:
+
 jobs:
   build:
+    name: Build Flutter Release APK
     runs-on: ubuntu-latest
 
     steps:
+      # ─────────────────────────────────────────────
+      # Checkout Repository
+      # ─────────────────────────────────────────────
       - name: Checkout Repository
         uses: actions/checkout@v4
 
+      # ─────────────────────────────────────────────
+      # Setup Java 17
+      # ─────────────────────────────────────────────
       - name: Setup Java 17
         uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: 17
+          java-version: "17"
 
-      - name: Clone Flutter SDK
-        run: git clone https://github.com/flutter/flutter.git --depth 1 -b stable $HOME/flutter
+      # ─────────────────────────────────────────────
+      # Install Flutter SDK
+      # ─────────────────────────────────────────────
+      - name: Install Flutter SDK
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
 
-      - name: Add Flutter to PATH
-        run: echo "$HOME/flutter/bin" >> $GITHUB_PATH
+      # ─────────────────────────────────────────────
+      # Verify Flutter
+      # ─────────────────────────────────────────────
+      - name: Flutter Doctor
+        run: flutter doctor -v
 
-      - name: Verify Flutter Installation
-        run: flutter --version
+      # ─────────────────────────────────────────────
+      # Clean Previous Builds
+      # ─────────────────────────────────────────────
+      - name: Clean Project
+        run: flutter clean
 
+      # ─────────────────────────────────────────────
+      # Install Dependencies
+      # ─────────────────────────────────────────────
       - name: Install Dependencies
         run: flutter pub get
 
+      # ─────────────────────────────────────────────
+      # Build APK
+      # ─────────────────────────────────────────────
       - name: Build Release APK
-        run: flutter build apk --release
+        run: flutter build apk --release --split-per-abi
 
-      - name: Upload APK Artifact
+      # ─────────────────────────────────────────────
+      # Upload APK Artifacts
+      # ─────────────────────────────────────────────
+      - name: Upload APK Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: release-apk
-          path: build/app/outputs/flutter-apk/app-release.apk
+          name: AuraSound-Release-APK
+          path: |
+            build/app/outputs/flutter-apk/*.apk
