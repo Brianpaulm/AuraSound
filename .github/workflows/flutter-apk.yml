@@ -2,14 +2,15 @@ name: Flutter APK CI
 
 on:
   push:
-    branches: [ main ]
+    branches:
+      - main
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout
+      - name: Checkout Repository
         uses: actions/checkout@v4
 
       - name: Setup Java 17
@@ -18,23 +19,23 @@ jobs:
           distribution: temurin
           java-version: 17
 
-      - name: Install Flutter manually
-        run: |
-          git clone https://github.com/flutter/flutter.git -b stable --depth 1
-          echo "$PWD/flutter/bin" >> $GITHUB_PATH
-          flutter --version
+      - name: Clone Flutter SDK
+        run: git clone https://github.com/flutter/flutter.git --depth 1 -b stable $HOME/flutter
 
-      - name: Flutter pub get
+      - name: Add Flutter to PATH
+        run: echo "$HOME/flutter/bin" >> $GITHUB_PATH
+
+      - name: Verify Flutter Installation
+        run: flutter --version
+
+      - name: Install Dependencies
         run: flutter pub get
 
-      - name: Analyze (non-blocking)
-        run: flutter analyze || true
-
-      - name: Build APK
+      - name: Build Release APK
         run: flutter build apk --release
 
-      - name: Upload APK
+      - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: apk-release
+          name: release-apk
           path: build/app/outputs/flutter-apk/app-release.apk
